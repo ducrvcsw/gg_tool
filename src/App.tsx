@@ -22,7 +22,6 @@ import { VisualProduction } from './components/VisualProduction';
 import { VideoProduction } from './components/VideoProduction';
 import { FinalStitch } from './components/FinalStitch';
 import { ExportPanel } from './components/ExportPanel';
-import { GitDiffModal } from './components/GitDiffModal';
 import { AppNode, AppEdge, NodeType } from './types/nodes';
 
 export type JobStatus = 'idle' | 'running' | 'done' | 'fail';
@@ -118,8 +117,7 @@ export default function UGCOmniEngine() {
   const [customVoiceScript, setCustomVoiceScript] = useState<string>('');
 
   const [history, setHistory] = useState<HistoryRecord[]>([]);
-  const [showDiff, setShowDiff] = useState(false);
-  
+
   const canvasRef = useRef<any>(null);
 
   useEffect(() => {
@@ -490,13 +488,6 @@ export default function UGCOmniEngine() {
               <div className="flex flex-col gap-1.5">
                 <div className="flex gap-1">
                   <FieldDropdown label="Production Ratio" value={aspectRatio} options={['9:16', '16:9', '1:1', '4:3', '3:4']} onChange={(v) => setAspectRatio(v as AspectRatio)} className="flex-1" />
-                  <button 
-                    onClick={() => setShowDiff(true)}
-                    className="h-[49px] w-12 flex items-center justify-center bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all group"
-                    title="Git Diff Code"
-                  >
-                    <span className="material-symbols-outlined text-[18px] text-white/40 group-hover:text-emerald-400">difference</span>
-                  </button>
                 </div>
               </div>
             </div>
@@ -608,12 +599,6 @@ export default function UGCOmniEngine() {
           <ExportPanel data={{ ...scriptData, concept: selectedConcept, ad_campaign_brief: deepDiveData }} />
         )}
       </div>
-
-      {/* Git Diff Modal */}
-      <GitDiffModal 
-        isOpen={showDiff} 
-        onClose={() => setShowDiff(false)} 
-      />
     </div>
   );
 }
