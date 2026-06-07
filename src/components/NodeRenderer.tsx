@@ -319,6 +319,13 @@ export const NodeRenderer: React.FC<{
 
          <OutputPreview node={node} />
 
+         {node.status === 'error' && node.data.error && (
+           <div className="mt-1 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+             <span className="text-[9px] font-black text-red-400 uppercase tracking-widest">Error</span>
+             <p className="text-[10px] text-red-300 leading-relaxed break-words whitespace-pre-wrap">{node.data.error}</p>
+           </div>
+         )}
+
          <div className="flex justify-between items-center px-1 pt-1 mt-auto">
             <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Execution Status</span>
             <span className={`text-[9px] font-black uppercase ${
