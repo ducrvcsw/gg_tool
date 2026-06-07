@@ -346,7 +346,7 @@ export const LineFlowCanvas = forwardRef<any, LineFlowCanvasProps>(({ nodes, set
           - Nếu yêu cầu JSON, chỉ trả về code block JSON sạch sẽ, không kèm lời dẫn giải.
           - Đảm bảo tính nhất quán với dữ liệu từ các node upstream.`;
 
-          const { text } = await Flow.generate.text(finalPrompt, { thinkingLevel: 'high', images: images.slice(0, 5) });
+          const { text } = await Flow.generate.text({ prompt: finalPrompt, thinkingLevel: 'high', images: images.slice(0, 5) });
           
           if (!text || text.trim() === '') throw new Error("AI không trả về kết quả hoặc phản hồi rỗng.");
 
