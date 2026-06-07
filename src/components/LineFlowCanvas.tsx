@@ -472,7 +472,9 @@ export const LineFlowCanvas = forwardRef<any, LineFlowCanvasProps>(({ nodes, set
       }
     } catch (err) {
       console.error("Execution error in Node Chain:", err);
-      setNodes(prev => prev.map(n => n.id === processingNodeId ? { ...n, status: 'error' } : n));
+      setNodes(prev => prev.map(n => n.id === processingNodeId
+        ? { ...n, status: 'error', data: { ...n.data, error: (err instanceof Error ? err.message : String(err)) } }
+        : n));
     } finally {
       setEdges(prev => prev.map(e => ({ ...e, isRunning: false })));
     }
