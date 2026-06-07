@@ -1,84 +1,79 @@
-# Spec — Tính năng "Export Source" (prompt cho Gemini / Google Flow)
+# Quy trình sync code từ Google Flow → repo mirror
 
-> Mục đích: Vì không edit code trực tiếp trong Google Flow được (chỉ prompt Gemini),
-> cần một nút trong app để copy TOÀN BỘ source ra clipboard/file, rồi dán về repo mirror
-> này (`ugc-omni-engine`) để Claude diff & sửa.
->
-> **Điểm sống còn:** invariant bảo trì ở PHẦN 2. Nếu Gemini không cập nhật `PROJECT_SOURCE`
-> mỗi lần sửa file, nút export sẽ xuất code cũ. Định kỳ vẫn nên đối chứng bằng "Prompt B" (dump toàn bộ).
+> Bối cảnh: không edit code trực tiếp trong Google Flow được (chỉ prompt Gemini), và app đã compile
+> nên không đọc được source .tsx lúc runtime. Mục tiêu: lấy code thật từ GG về repo này để Claude diff & sửa.
 
 ---
 
-## Prompt dán vào Google Flow
+## ⛔ Hướng đã THẤT BẠI — "bake source vào constant" (nút Export Source)
+
+Đã thử bắt Gemini dựng `PROJECT_SOURCE` (constant chứa toàn bộ source) + nút "Copy All Source".
+Kết quả hỏng:
+- Nội dung từng file là **placeholder giả** (`// (Mã nguồn ... đã được làm sạch)`), không phải code thật.
+- Chỉ track **5/22 file**.
+
+**Nguyên nhân gốc:** bắt LLM tự sao chép 6000 dòng source của chính nó vào một biến string rồi giữ
+đồng bộ mãi → nó luôn gian lận (tóm tắt/stub/bỏ file). **Bỏ hẳn hướng này. Nên gỡ nút Export.**
+
+---
+
+## ✅ Quy trình khuyến nghị
+
+Nguyên tắc: bắt Gemini **in code thật ra chat** (in trong câu trả lời khó cheat hơn nhồi vào constant).
+Repo này là nguồn chân lý "code đang có" → Claude tự `git diff`, không cần Gemini tạo diff.
+
+### Giai đoạn 1 — Sync đầy đủ (chỉ làm 1 lần, hoặc khi nghi lệch nhiều)
+
+**Prompt 1.1 — lấy danh sách file:**
+```
+Liệt kê đường dẫn đầy đủ của TẤT CẢ file trong thư mục src/ của dự án này,
+mỗi dòng một path (vd: src/App.tsx). KHÔNG in nội dung, KHÔNG bỏ sót file nào, KHÔNG thêm lời dẫn.
+```
+
+**Prompt 1.2 — in từng file (lặp lại, mỗi lần 1 file; file lớn in riêng):**
+```
+In NGUYÊN VĂN toàn bộ nội dung file: <DÁN_PATH>
+TUYỆT ĐỐI CẤM: tóm tắt, rút gọn, thay code bằng chú thích kiểu "// (đã làm sạch)" / "// ... giữ nguyên" / "// ...",
+bỏ qua bất kỳ dòng nào, cắt giữa chừng.
+Chỉ in code thật trong 1 code block, dòng đầu ghi đúng path. File dài cỡ nào cũng in hết.
+Nếu vướng giới hạn độ dài, in tiếp phần còn lại của ĐÚNG file này ở câu trả lời sau, không nhảy file khác.
+```
+
+### Giai đoạn 2 — Cập nhật từng lần (NGẮN, dùng thường xuyên)
+
+Sau Giai đoạn 1, mỗi lần Gemini sửa gì chỉ cần lấy **các file vừa đổi (full)** — thường 1–3 file.
+
+**Prompt 2 — in các file vừa thay đổi:**
+```
+Bạn vừa sửa code. Chỉ làm 2 việc, không giải thích thừa:
+1. Liệt kê các file bạn vừa THÊM / SỬA / XÓA trong lần này.
+2. In NGUYÊN VĂN toàn bộ nội dung MỚI của TỪNG file vừa thêm/sửa — đầy đủ, KHÔNG tóm tắt,
+   KHÔNG "// ...", KHÔNG "đã làm sạch". Mỗi file 1 code block, dòng đầu ghi đúng path.
+   File bị xóa: chỉ ghi "DELETED: <path>".
+KHÔNG in các file không liên quan.
+```
+
+→ Dán output cho Claude. Claude ghi đè đúng các file đó vào repo, rồi `git diff` ra thay đổi chính xác.
+
+### (Tùy chọn) Prompt review nhanh — chỉ để đọc, KHÔNG để áp
 
 ```
-NHIỆM VỤ: Thêm tính năng "Export Source" để tôi copy toàn bộ source code của app ra clipboard / file.
-
-BỐI CẢNH & RÀNG BUỘC (đọc kỹ, tuân thủ tuyệt đối):
-- App chạy trong sandbox Google Flow, đã compile nên KHÔNG thể fetch/đọc file .tsx nguồn lúc runtime.
-  Vì vậy nguồn duy nhất tin cậy để export là một CONSTANT chứa sẵn source dạng chuỗi.
-- KHÔNG thêm thư viện npm mới. Chỉ dùng React + TypeScript + Flow.* SDK + framer-motion
-  và các primitive UI sẵn có trong src/components/UIPrimitives.tsx.
-- Giữ nguyên kiến trúc, theme tối hiện tại. Diff tối thiểu.
-
-PHẦN 1 — DATA (nguồn chân lý):
-- Tạo file src/constants/projectSource.ts, export:
-    export const PROJECT_SOURCE: Record<string, string> = { ... }
-- Key là ĐƯỜNG DẪN ĐẦY ĐỦ từ gốc dự án (vd: "src/App.tsx", "src/components/NodeRenderer.tsx",
-  "src/types/nodes.ts", "src/constants/projectSource.ts").
-- Value là TOÀN BỘ nội dung hiện tại của file đó (đầy đủ, không rút gọn, không "// ...").
-- Phải liệt kê ĐỦ TẤT CẢ file trong src/ (kể cả chính projectSource.ts).
-
-PHẦN 2 — INVARIANT BẢO TRÌ (BẮT BUỘC, quan trọng nhất):
-- Kể từ giờ, MỖI khi bạn tạo/sửa/xóa BẤT KỲ file nào, trong CÙNG lượt đó bạn PHẢI cập nhật
-  entry tương ứng trong PROJECT_SOURCE cho khớp 100% với code mới.
-- Nếu thêm file mới → thêm key mới. Nếu xóa file → xóa key. Không được để PROJECT_SOURCE lệch với code thật.
-
-PHẦN 3 — UI:
-- Thêm một nút "Export Source" ở sidebar trái (cạnh nút Git Diff hiện có, icon "ios_share" hoặc "download").
-- Bấm vào mở một modal (dùng motion + style giống GitDiffModal):
-    * Tiêu đề "Export Project Source" + hiển thị tổng số file: Object.keys(PROJECT_SOURCE).length.
-    * Danh sách tất cả file; mỗi dòng có nút "Copy" riêng (copy nội dung 1 file).
-    * Nút lớn "Copy All Source" → copy 1 chuỗi gộp TẤT CẢ file ra clipboard
-      (dùng navigator.clipboard.writeText).
-    * Nút "Download .txt" → tải chuỗi gộp đó về (dùng Flow.download với
-      base64 = btoa(unescape(encodeURIComponent(dump))), mimeType 'text/plain',
-      filename 'ugc-omni-source.txt'). Tham khảo cách Flow.download đã dùng trong ExportPanel.tsx.
-    * Mỗi nút copy hiển thị trạng thái "Copied ✓" trong ~2 giây.
-
-PHẦN 4 — ĐỊNH DẠNG CHUỖI GỘP (cực kỳ quan trọng, phải đúng từng ký tự để máy parse được):
-- Ghép các file theo thứ tự key, mỗi file bọc bằng delimiter sau:
-
-===== FILE: <đường-dẫn> =====
-<toàn bộ nội dung file>
-===== END: <đường-dẫn> =====
-
-  (giữa các block cách nhau đúng 1 dòng trống; KHÔNG bọc trong ``` markdown).
-
-PHẦN 5 — TIÊU CHÍ NGHIỆM THU:
-- Bấm "Copy All Source" → clipboard chứa source đầy đủ của mọi file, đúng định dạng PHẦN 4.
-- Số file hiển thị == số file thật trong src/.
-- Không lỗi TypeScript, không thêm dependency, app vẫn chạy bình thường.
-- (Tùy chọn) Có thể gỡ bỏ GitDiffModal cũ vì tính năng này thay thế hoàn toàn nhu cầu đó.
+Tóm tắt thay đổi vừa làm dạng dễ đọc: với mỗi file đổi, liệt kê hàm/khối đã sửa + mô tả ngắn đổi gì.
+(Vẫn phải kèm bản in đầy đủ các file thay đổi ở trên — bản tóm tắt này chỉ để review.)
 ```
 
 ---
 
-## Quy trình sync sau khi có nút export
+## Vì sao KHÔNG dùng "nút show file vừa update" / "Gemini xuất git diff"
 
-1. Trong Google Flow: bấm **Export Source → Copy All Source** (hoặc Download .txt).
-2. Dán nội dung cho Claude ở repo này.
-3. Claude tách theo delimiter `===== FILE: ... =====`, ghi đè từng file, rồi `git diff` để xem thay đổi.
-4. Claude sửa/diff trên repo; nếu cần đổi code, Claude soạn prompt để bạn nhờ Gemini áp lại bên GG.
+- **Nút in-app:** app runtime không biết Gemini vừa đổi file nào (không có metadata). Muốn có thì Gemini
+  phải tự ghi vào constant → lặp lại trò stub rỗng. Tên file ghi được, nội dung thật thì không.
+- **Git diff do Gemini bịa:** ngắn nhưng số dòng/context thường sai → áp nhầm. In full file thay đổi rồi
+  để repo tự `git diff` mới an toàn (ghi đè không bao giờ sai).
 
-## Prompt dự phòng (khi nghi nút export xuất code cũ)
+## Chống cheat (luôn nhắc Gemini)
+Không tóm tắt, không `// ...`, không `// (đã làm sạch)`, không bỏ file, không cắt giữa chừng. In code thật.
 
-**Prompt B — dump toàn bộ source thủ công:**
-
-```
-In ra TOÀN BỘ source code hiện tại của dự án, đầy đủ từng file một.
-Quy tắc bắt buộc:
-- Mỗi file một code block riêng; dòng đầu mỗi block ghi đường dẫn đầy đủ (vd: src/App.tsx).
-- In NGUYÊN VẸN nội dung, tuyệt đối không rút gọn, không "...", không bỏ qua phần nào.
-- Liệt kê đủ tất cả file trong src/. Không thêm lời dẫn giải.
-```
+## Cách Claude áp về repo
+Nhận code theo từng code block có path ở dòng đầu (hoặc delimiter `===== FILE: <path> =====`),
+ghi đè đúng file → `git diff` → xử lý/sửa tiếp tại repo.
