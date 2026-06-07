@@ -69,6 +69,6 @@ export const NODE_CAPABILITIES: Record<string, { inputs: string[], outputs: stri
   // Cập nhật image_node để chấp nhận SCENE_SCRIPT phù hợp với default chain (branch_script -> image_node)
   image_node: { inputs: ['SCENE_SCRIPT'], outputs: ['IMAGE_ASSET'] },
   video_node: { inputs: ['SCENE_SCRIPT', 'IMAGE_ASSET'], outputs: ['VIDEO_ASSET'] },
-  render_node: { inputs: ['IMAGE_ASSET', 'VIDEO_ASSET'], outputs: ['FINAL_CLIP'] },
+  render_node: { inputs: ['IMAGE_ASSET'], outputs: ['FINAL_CLIP'] },
   export_stitch: { inputs: ['FINAL_CLIP'], outputs: ['PRODUCTION_PAYLOAD'] },
 };
