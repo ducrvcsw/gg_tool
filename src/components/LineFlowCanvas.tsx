@@ -403,12 +403,34 @@ export const LineFlowCanvas = forwardRef<any, LineFlowCanvasProps>(({ nodes, set
           }
         } 
         else if (nodeRef.type === 'image_node') {
+          // Gộp mediaId từ upstream product_image nodes và globalData.productMedias
+          const productMediaIds = [
+            ...currentUpstream
+              .filter(u => u.type === 'product_image')
+              .map(u => u.data.mediaId),
+            ...(globalData.productMedias || []).map((m: any) => m.mediaId)
+          ].filter(Boolean).slice(0, 10);
+
           const gen = await Flow.generate.image({
             prompt: `UGC Commercial Photography Production. Context Details: ${promptContext}. Execution: ${nodeRef.data.prompt || DEFAULT_PROMPTS.image_node}`,
+            referenceImageMediaIds: productMediaIds,
             modelDisplayName: nodeRef.model || '🍌 Nano Banana Pro',
             aspectRatio: globalData.aspectRatio || '9:16'
           });
-          nodeResult = { type: 'image', title: '4K Scene Asset', url: `data:${gen.mimeType};base64,${gen.base64}` };
+
+          // Upload để lấy mediaId phục vụ chaining (video gen)
+          const up = await Flow.upload({
+            base64: gen.base64,
+            mimeType: gen.mimeType,
+            name: `scene_${nodeRef.id}`
+          });
+
+          nodeResult = {
+            type: 'image',
+            title: '4K Scene Asset',
+            url: `data:${gen.mimeType};base64,${gen.base64}`,
+            mediaId: up.mediaId
+          };
         }
         else if (nodeRef.type === 'video_node' || nodeRef.type === 'render_node') {
           const selectedModel = nodeRef.model || 'Omni Flash';
@@ -420,13 +442,20 @@ export const LineFlowCanvas = forwardRef<any, LineFlowCanvasProps>(({ nodes, set
           };
           options.prompt = selectedModel.includes('Omni') ? `High-end cinematic advertising presentation: ${sanitizePromptForOmni(baseVPrompt)}` : baseVPrompt;
           
-          // Chống lỗi missing firstFrameImageMediaId cho các model I2V
-          const lastImageNode = currentUpstream.reverse().find(u => nodesRef.current.find(an => an.id === u.id)?.data.result?.type === 'image');
+          // Lấy mediaId ảnh thượng nguồn gần nhất (I2V/R2V)
+          const lastImageNode = [...currentUpstream].reverse().find((u: AppNode) => {
+            const actual = nodesRef.current.find((an: AppNode) => an.id === u.id);
+            return actual?.data.result?.type === 'image' && actual?.data.result?.mediaId;
+          });
+
           if (lastImageNode) {
             const actualImgNode = nodesRef.current.find(an => an.id === lastImageNode.id);
-            if (actualImgNode?.data.result?.url) {
-               // Chú ý: Ở Line Flow mode thực sự, ta cần mediaId từ Flow.upload nếu chưa có
-               // Ở đây tạm thời pass referenceImageMediaIds nếu upstream node là image_node thành công
+            const imgMediaId = actualImgNode?.data.result?.mediaId;
+
+            if (selectedModel.includes('Omni')) {
+              options.referenceImageMediaIds = [imgMediaId];
+            } else {
+              options.firstFrameImageMediaId = imgMediaId;
             }
           }
 
