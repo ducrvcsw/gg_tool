@@ -155,7 +155,7 @@ export default function UGCOmniEngine() {
       status: 'idle', 
       model: 'Gemini 3.5 Flash', 
       data: { 
-        prompt: 'Hãy tạo 6 Concepts quảng cáo UGC mang tính chuyển đổi cao. Trả về DUY NHẤT một mảng JSON: [{ "name": "...", "description": "...", "insight_rationale": "...", "suitability_score": "0-10" }].' 
+        prompt: 'Hãy tạo 6 Concepts quảng cáo UGC mang tính chuyển đổi cao. YÊU CẦU BỐI CẢNH: mỗi concept đặt trong MỘT bối cảnh đời thường thuần Việt KHÁC NHAU (không trùng lặp) như đường phố/vỉa hè, chợ truyền thống, trung tâm thương mại, quán cà phê, quán ăn vỉa hè, công viên, phòng bếp/phòng khách gia đình, văn phòng, trường học, phố cổ, homestay; lồng ghép con người và nhịp sống Việt Nam, TRÁNH phông nền studio chung chung. Trường "description" PHẢI nêu rõ bối cảnh Việt Nam cụ thể. Trả về DUY NHẤT một mảng JSON: [{ "name": "...", "description": "...", "insight_rationale": "...", "suitability_score": "0-10" }].'
       } 
     };
 
@@ -350,7 +350,7 @@ export default function UGCOmniEngine() {
       setInsightsData(parsedInsights); 
 
       // STEP 3: CONCEPTS
-      const { text: conceptsText } = await Flow.generate.text(`DỰA TRÊN BRIEF SẢN PHẨM: ${JSON.stringify(parsedBrief)} VÀ MA TRẬN INSIGHTS: ${JSON.stringify(parsedInsights)}. Hãy tạo 6 Concepts quảng cáo UGC mang tính chuyển đổi cao. Trả về DUY NHẤT một mảng JSON: [{ "name": "...", "agent_focus": "A|B|C|D", "description": "...", "insight_rationale": "...", "suitability_score": 0.0-1.0 }].`, { thinkingLevel: 'high' });
+      const { text: conceptsText } = await Flow.generate.text(`DỰA TRÊN BRIEF SẢN PHẨM: ${JSON.stringify(parsedBrief)} VÀ MA TRẬN INSIGHTS: ${JSON.stringify(parsedInsights)}. Hãy tạo 6 Concepts quảng cáo UGC mang tính chuyển đổi cao. YÊU CẦU BỐI CẢNH: mỗi concept đặt trong MỘT bối cảnh đời thường thuần Việt KHÁC NHAU (không trùng lặp) như đường phố/vỉa hè, chợ truyền thống, trung tâm thương mại, quán cà phê, quán ăn vỉa hè, công viên, phòng bếp/phòng khách gia đình, văn phòng, trường học, phố cổ, homestay; lồng ghép con người và nhịp sống Việt Nam, TRÁNH phông nền studio chung chung. Trường "description" PHẢI nêu rõ bối cảnh Việt Nam cụ thể của concept. Trả về DUY NHẤT một mảng JSON: [{ "name": "...", "agent_focus": "A|B|C|D", "description": "...", "insight_rationale": "...", "suitability_score": 0.0-1.0 }].`, { thinkingLevel: 'high' });
       
       const rawParsedConcepts = safeJsonParse(conceptsText, []);
       

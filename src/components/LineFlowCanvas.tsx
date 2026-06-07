@@ -16,7 +16,7 @@ interface LineFlowCanvasProps {
 const DEFAULT_PROMPTS: Record<string, string> = {
   ai_researcher: 'Phân tích sâu USP, Visual DNA và định hướng Creative Brief tập trung vào chuyển đổi cho sản phẩm này.',
   insight_matrix: 'Xây dựng ma trận Insight 4 nhóm chuyên gia Marketing/Tâm lý dựa trên dữ liệu sản phẩm. Trả về DUY NHẤT JSON: { "industry_expert": {"usp": "...", "pain_point": "..."}, "marketing_seo": {"keywords": "...", "hooks": "..."}, "psychology": {"motivations": "...", "barriers": "..."}, "media_director": {"trends": "...", "angles": "..."} }',
-  concept_factory: 'Hãy tạo 6 Concepts quảng cáo UGC mang tính chuyển đổi cao. Trả về DUY NHẤT một mảng JSON: [{ "name": "...", "description": "...", "insight_rationale": "...", "suitability_score": "0-10" }].',
+  concept_factory: 'Hãy tạo 6 Concepts quảng cáo UGC mang tính chuyển đổi cao. YÊU CẦU BỐI CẢNH: mỗi concept đặt trong MỘT bối cảnh đời thường thuần Việt KHÁC NHAU (không trùng lặp) như đường phố/vỉa hè, chợ truyền thống, trung tâm thương mại, quán cà phê, quán ăn vỉa hè, công viên, phòng bếp/phòng khách gia đình, văn phòng, trường học, phố cổ, homestay; lồng ghép con người và nhịp sống Việt Nam, TRÁNH phông nền studio chung chung. Trường "description" PHẢI nêu rõ bối cảnh Việt Nam cụ thể. Trả về DUY NHẤT một mảng JSON: [{ "name": "...", "description": "...", "insight_rationale": "...", "suitability_score": "0-10" }].',
   branch_script: 'Viết kịch bản ngắn gọn, súc tích (3 từ/giây), tập trung vào sản phẩm và chuyển đổi.',
   visual_prompting: 'Mô tả chi tiết bối cảnh 4K cho cảnh quay này.',
   image_node: 'Sản xuất hình ảnh quảng cáo 4K chuyên nghiệp.',
