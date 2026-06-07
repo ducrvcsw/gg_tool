@@ -11,7 +11,7 @@ interface VoiceStudioProps {
   onModeChange: (mode: VoiceScriptMode) => void;
   voiceSourceMode: VoiceSourceMode;
   onVoiceSourceModeChange: (mode: VoiceSourceMode) => void;
-  customScript: string;
+  customVoiceScript: string;
   onCustomScriptChange: (script: string) => void;
   conceptName?: string;
   audioMedia: any;
@@ -32,7 +32,7 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
   onModeChange,
   voiceSourceMode,
   onVoiceSourceModeChange,
-  customScript,
+  customVoiceScript,
   onCustomScriptChange,
   conceptName,
   audioMedia, 
@@ -50,7 +50,7 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const handleCopy = () => {
-    const textToCopy = voiceScriptMode === 'suggested' ? script : customScript;
+    const textToCopy = voiceScriptMode === 'suggested' ? script : customVoiceScript;
     if (!textToCopy) return;
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
@@ -62,7 +62,6 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
     setError(null);
     try {
       const totalSeconds = sceneCount * sceneDuration;
-      // Ad styles for mixing
       const adStylesList = `
       - Review / Unboxing (Trải nghiệm thực tế)
       - Before & After (Lột xác)
@@ -114,7 +113,7 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
   };
 
   const handleNext = () => {
-    if (voiceScriptMode === 'own' && (!customScript || customScript.trim() === '')) {
+    if (voiceScriptMode === 'own' && (!customVoiceScript || customVoiceScript.trim() === '')) {
       setError("Vui lòng nhập nội dung kịch bản thoại của riêng bạn trước khi tiếp tục.");
       return;
     }
@@ -211,7 +210,7 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
               ) : (
                 <motion.div key="own" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col flex-1">
                   <TextInput 
-                    value={customScript} 
+                    value={customVoiceScript}
                     onChange={onCustomScriptChange} 
                     placeholder="Nhập kịch bản thoại cá nhân hóa của bạn tại đây..." 
                     className="flex-1 min-h-[300px] text-[13px] !bg-emerald-500/5 !border-emerald-500/20 focus:!border-emerald-500/50"

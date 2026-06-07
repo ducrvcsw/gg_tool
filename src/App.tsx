@@ -117,7 +117,7 @@ export default function UGCOmniEngine() {
   const [customVoiceScript, setCustomVoiceScript] = useState<string>('');
 
   const [history, setHistory] = useState<HistoryRecord[]>([]);
-
+  
   const canvasRef = useRef<any>(null);
 
   useEffect(() => {
@@ -130,6 +130,7 @@ export default function UGCOmniEngine() {
     if (opMode === 'line_flow' && nodes.length === 0) {
       initializeOmniChain();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opMode]);
 
   const initializeOmniChain = () => {
@@ -343,12 +344,12 @@ export default function UGCOmniEngine() {
       const parsedBrief = safeJsonParse(deepDiveText, { name: "Product", features: [] });
       setDeepDiveData(parsedBrief); 
       
-      // STEP 2: INSIGHTS - Dùng parsedBrief thay vì deepDiveData (stale state)
+      // STEP 2: INSIGHTS
       const { text: insightText } = await Flow.generate.text(`DỰA TRÊN BRIEF SẢN PHẨM: ${JSON.stringify(parsedBrief)}. Tạo Insight Matrix. Đối tượng model: ${modelGender}, ${modelAge} tuổi. Trả JSON: { "industry_expert": {"usp", "pain_point", "segment"}, "marketing_seo": {"keywords", "top_hooks"}, "psychology": {"motivations", "barriers"}, "media_director": {"visual_trends", "angles"} }`, { thinkingLevel: 'high' });
       const parsedInsights = safeJsonParse(insightText, {});
       setInsightsData(parsedInsights); 
 
-      // STEP 3: CONCEPTS - Dùng parsedBrief & parsedInsights (stale state fix)
+      // STEP 3: CONCEPTS
       const { text: conceptsText } = await Flow.generate.text(`DỰA TRÊN BRIEF SẢN PHẨM: ${JSON.stringify(parsedBrief)} VÀ MA TRẬN INSIGHTS: ${JSON.stringify(parsedInsights)}. Hãy tạo 6 Concepts quảng cáo UGC mang tính chuyển đổi cao. Trả về DUY NHẤT một mảng JSON: [{ "name": "...", "agent_focus": "A|B|C|D", "description": "...", "insight_rationale": "...", "suitability_score": 0.0-1.0 }].`, { thinkingLevel: 'high' });
       
       const rawParsedConcepts = safeJsonParse(conceptsText, []);
@@ -374,7 +375,6 @@ export default function UGCOmniEngine() {
       setConceptsData(finalConcepts); 
       updateJobStatus(jobId, 'done');
       
-      // Chuyển bước sau khi hoàn tất phân tích
       setStep(1); 
       setMaxReachedStep(Math.max(maxReachedStep, 1));
     } catch (err) { 
@@ -579,14 +579,7 @@ export default function UGCOmniEngine() {
                    />
                    
                    <div className="pt-2 pb-12">
-                     <PillButton 
-                        variant="solid" 
-                        className="h-10 text-sm font-black w-64 shadow-2xl hover:scale-105 active:scale-95 transition-all" 
-                        onClick={runStandardAnalysis} 
-                        disabled={productMedias.length === 0 || isAnalyzing}
-                      >
-                        Bắt đầu Production
-                      </PillButton>
+                     <PillButton variant="solid" className="h-10 text-sm font-black w-64 shadow-2xl hover:scale-105 active:scale-95 transition-all" onClick={runStandardAnalysis} disabled={productMedias.length === 0 || isAnalyzing}>Bắt đầu Production</PillButton>
                    </div>
                 </motion.div>
               ) : (
